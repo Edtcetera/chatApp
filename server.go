@@ -39,12 +39,10 @@ func main() {
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
-			// handle error
+			panic("server accept error")
 		}
 		go handleConnection(conn)
 	}
-
-
 }
 
 func handshakeServer(args []string) {
