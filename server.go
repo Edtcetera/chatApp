@@ -2,17 +2,29 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net"
+	"net/http"
+	"net/rpc"
+	"net/rpc/jsonrpc"
 	"os"
+	"sync"
 )
 
-type server struct {
-	addr net.Addr
-	next net.Addr
-	prev net.Addr
+type ServerEntry struct {
+	addr net.Addr //This server
+	next net.Addr //This server's invitee
+	prev net.Addr //This server's inviter
 }
 
-var serverList []server
+type Server struct {
+	entries map[string] *ServerEntry
+	lock sync.Mutex
+}
+
+type Add_server_args struct {
+	addr net.Addr //address of itself to be added to swarm's list of server
+}
 
 func main() {
 	args := os.Args // ./server [inviterIP]
@@ -20,40 +32,41 @@ func main() {
 		panic("Wrong arguments")
 	}
 
-	ln, err := net.Listen("tcp", ":0")
+	ln, err := net.Listen("tcp", "localhost:0")
 	if err != nil {
 		panic("TCP server creation error")
 	}
 
 	fmt.Println("Welcome to chat server, running server on " + ln.Addr().String())
-
+	go tcpListener()
 	switch len(args) {
 	case 1:
 		fmt.Println("You are the Origin chat server")
 	case 2:
 		fmt.Println("You are attempting to join a network invited by: " + args[1])
-		//get server list from inviter
-		handshakeServer(args)
-	}
-
-	for {
-		conn, err := ln.Accept()
-		if err != nil {
-			panic("server accept error")
-		}
-		go handleConnection(conn)
 	}
 }
 
-func handshakeServer(args []string) {
-	conn, err := net.Dial("tcp", args[1])
-	if err != nil {
-		panic("handshake error")
+func tcpListener(){
+	server := new(Server)
+	rpc.Register(server)
+	rpc.HandleHTTP()
+	//do something here so that we can accept both http and tcp connections
+	l,e := net.Listen("tcp",":0")
+	if e!=nil{
+		log.Fatal("listen error:", e)
+		return
 	}
-	fmt.Println(conn.LocalAddr().String())
+	go http.Serve(l, nil)
 }
 
-func handleConnection(conn net.Conn) {
-	fmt.Println(conn.LocalAddr().String())
-	fmt.Println(conn.RemoteAddr().String())
+func (server *Server) addServer (args *Add_server_args, reply *string) error {
+	addr := args.addr
+	var err error
+
+	server.lock.Lock()
+	serverEntry := ServerEntry{addr, nil, nil}
+	server.lock.Unlock()
+	*reply = "Success"
+	return err
 }
