@@ -28,9 +28,9 @@ func main() {
 	fmt.Println("Welcome to chat server, running server on " + ln.Addr().String())
 
 	switch len(args) {
-	case 2:
+	case 1:
 		fmt.Println("You are the Origin chat server")
-	case 3:
+	case 2:
 		fmt.Println("You are attempting to join a network invited by: " + args[1])
 		//get server list from inviter
 		handshakeServer(args)
