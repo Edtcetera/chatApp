@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net"
 	"os"
 )
@@ -20,10 +19,14 @@ func main() {
 	if len(args) > 3 || len(args) < 2 {
 		panic("Wrong arguments, port and/or inviter IP required")
 	}
-	publicIP := getPublicIP()
+
+	ln, err := net.Listen("tcp", ":" + args[1])
+	if err != nil {
+		// handle error
+	}
 
 	fmt.Println("Welcome to chat server, running server on port " + args[1])
-	fmt.Println("Your public IP is: " + publicIP.String())
+	fmt.Println("Your public IP is: " + ln.Addr().String())
 
 	switch len(args) {
 	case 2:
@@ -33,7 +36,16 @@ func main() {
 		//get server list from inviter
 		handshakeServer(args)
 	}
-	createServer(args)
+
+	for {
+		conn, err := ln.Accept()
+		if err != nil {
+			// handle error
+		}
+		go handleConnection(conn)
+	}
+
+
 }
 
 func handshakeServer(args []string) {
@@ -44,34 +56,7 @@ func handshakeServer(args []string) {
 	fmt.Println(conn.LocalAddr().String())
 }
 
-func createServer(args []string) {
-	ln, err := net.Listen("tcp", ":" + args[1])
-	if err != nil {
-		// handle error
-	}
-	for {
-		conn, err := ln.Accept()
-		if err != nil {
-			// handle error
-		}
-		go handleConnection(conn)
-	}
-}
-
 func handleConnection(conn net.Conn) {
-	fmt.Println(conn)
-}
-
-// Get preferred outbound ip of this machine
-func getPublicIP() net.Addr {
-	fmt.Println("Getting outbound IP addr")
-	conn, err := net.Dial("udp", "8.8.8.8:80")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer conn.Close()
-
-	localAddr := conn.LocalAddr()
-
-	return localAddr
+	fmt.Println(conn.LocalAddr().String())
+	fmt.Println(conn.RemoteAddr().String())
 }
