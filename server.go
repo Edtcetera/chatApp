@@ -15,24 +15,23 @@ type server struct {
 var serverList []server
 
 func main() {
-	args := os.Args // ./server [port]
-	if len(args) > 3 || len(args) < 2 {
-		panic("Wrong arguments, port and/or inviter IP required")
+	args := os.Args // ./server [inviterIP]
+	if len(args) > 2 || len(args) < 1 {
+		panic("Wrong arguments")
 	}
 
-	ln, err := net.Listen("tcp", ":" + args[1])
+	ln, err := net.Listen("tcp", ":0")
 	if err != nil {
-		// handle error
+		panic("TCP server creation error")
 	}
 
-	fmt.Println("Welcome to chat server, running server on port " + args[1])
-	fmt.Println("Your public IP is: " + ln.Addr().String())
+	fmt.Println("Welcome to chat server, running server on " + ln.Addr().String())
 
 	switch len(args) {
 	case 2:
 		fmt.Println("You are the Origin chat server")
 	case 3:
-		fmt.Println("You are attempting to join a network invited by: " + args[2])
+		fmt.Println("You are attempting to join a network invited by: " + args[1])
 		//get server list from inviter
 		handshakeServer(args)
 	}
@@ -49,7 +48,7 @@ func main() {
 }
 
 func handshakeServer(args []string) {
-	conn, err := net.Dial("tcp", args[2])
+	conn, err := net.Dial("tcp", args[1])
 	if err != nil {
 		panic("handshake error")
 	}
